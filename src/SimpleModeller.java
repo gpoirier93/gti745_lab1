@@ -294,7 +294,8 @@ class Scene {
 	public void drawScene(
 		GL gl,
 		int indexOfHilitedBox, // -1 for none
-		boolean useAlphaBlending
+		boolean useAlphaBlending,
+		boolean drawWireFrameBoxes
 	) {
 		if ( useAlphaBlending ) {
 			gl.glDisable(GL.GL_DEPTH_TEST);
@@ -302,13 +303,14 @@ class Scene {
 			gl.glBlendFunc( GL.GL_SRC_ALPHA, GL.GL_ONE );
 			gl.glEnable( GL.GL_BLEND );
 		}
+		
 		for ( int i = 0; i < coloredBoxes.size(); ++i ) {
 			ColoredBox cb = coloredBoxes.elementAt(i);
 			if ( useAlphaBlending )
 				gl.glColor4f( cb.r, cb.g, cb.b, cb.a );
 			else
 				gl.glColor3f( cb.r, cb.g, cb.b );
-			drawBox( gl, cb.box, false, false, false );
+			drawBox( gl, cb.box, false, drawWireFrameBoxes, false );
 		}
 		if ( useAlphaBlending ) {
 			gl.glDisable( GL.GL_BLEND );
@@ -360,6 +362,7 @@ class SceneViewer extends GLCanvas implements MouseListener, MouseMotionListener
 	private static final int COMMAND_COLOR_BLUE = 4;
 	private static final int COMMAND_DELETE = 5;
 
+	public boolean drawWireFrameBoxes = false;
 	public boolean displayWorldAxes = false;
 	public boolean displayCameraTarget = false;
 	public boolean displayBoundingBox = false;
@@ -522,7 +525,7 @@ class SceneViewer extends GLCanvas implements MouseListener, MouseMotionListener
 		gl.glDisable( GL.GL_LIGHTING );
 		gl.glShadeModel( GL.GL_FLAT );
 
-		scene.drawScene( gl, indexOfHilitedBox, enableCompositing );
+		scene.drawScene( gl, indexOfHilitedBox, enableCompositing, drawWireFrameBoxes );
 
 		if ( displayWorldAxes ) {
 			gl.glBegin( GL.GL_LINES );
@@ -763,6 +766,7 @@ public class SimpleModeller implements ActionListener {
 	JButton deleteSelectionButton;
 	JButton lookAtSelectionButton;
 	JButton resetCameraButton;
+	JCheckBox drawWireFrameBoxesCheckBox;
 	JCheckBox displayWorldAxesCheckBox;
 	JCheckBox displayCameraTargetCheckBox;
 	JCheckBox displayBoundingBoxCheckBox;
@@ -818,6 +822,9 @@ public class SimpleModeller implements ActionListener {
 		}
 		else if ( source == resetCameraButton ) {
 			sceneViewer.resetCamera();
+			sceneViewer.repaint();
+		} else if (source == drawWireFrameBoxesCheckBox) {
+			sceneViewer.drawWireFrameBoxes = !sceneViewer.drawWireFrameBoxes;
 			sceneViewer.repaint();
 		}
 		else if ( source == displayWorldAxesCheckBox ) {
@@ -912,6 +919,11 @@ public class SimpleModeller implements ActionListener {
 		resetCameraButton.addActionListener(this);
 		toolPanel.add( resetCameraButton );
 
+		drawWireFrameBoxesCheckBox = new JCheckBox("Draw WireFrame Boxes", sceneViewer.drawWireFrameBoxes);
+		drawWireFrameBoxesCheckBox.setAlignmentX(Component.LEFT_ALIGNMENT);
+		drawWireFrameBoxesCheckBox.addActionListener(this);
+		toolPanel.add(drawWireFrameBoxesCheckBox);
+		
 		displayWorldAxesCheckBox = new JCheckBox("Display World Axes", sceneViewer.displayWorldAxes );
 		displayWorldAxesCheckBox.setAlignmentX( Component.LEFT_ALIGNMENT );
 		displayWorldAxesCheckBox.addActionListener(this);
