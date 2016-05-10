@@ -450,6 +450,19 @@ class SceneViewer extends GLCanvas implements MouseListener, MouseMotionListener
 		indexOfSelectedBox = scene.coloredBoxes.size() - 1;
 		scene.setSelectionStateOfBox( indexOfSelectedBox, true );
 	}
+	
+	private void selectNewBox() {
+		if ( indexOfSelectedBox >= 0 )
+			// de-select the old box
+			scene.setSelectionStateOfBox( indexOfSelectedBox, false );
+		indexOfSelectedBox = indexOfHilitedBox;
+		selectedPoint.copy( hilitedPoint );
+		normalAtSelectedPoint.copy( normalAtHilitedPoint );
+		if ( indexOfSelectedBox >= 0 ) {
+			scene.setSelectionStateOfBox( indexOfSelectedBox, true );
+		}
+		repaint();
+	}
 
 	public void setColorOfSelection( float r, float g, float b ) {
 		if ( indexOfSelectedBox >= 0 ) {
@@ -589,6 +602,7 @@ class SceneViewer extends GLCanvas implements MouseListener, MouseMotionListener
 		mouse_y = e.getY();
 
 		if ( radialMenu.isVisible() || (SwingUtilities.isRightMouseButton(e) && !e.isShiftDown() && !e.isControlDown()) ) {
+			selectNewBox();
 			int returnValue = radialMenu.pressEvent( mouse_x, mouse_y );
 			if ( returnValue == CustomWidget.S_REDRAW )
 				repaint();
@@ -599,16 +613,7 @@ class SceneViewer extends GLCanvas implements MouseListener, MouseMotionListener
 		updateHiliting();
 
 		if ( SwingUtilities.isLeftMouseButton(e) && !e.isControlDown() ) {
-			if ( indexOfSelectedBox >= 0 )
-				// de-select the old box
-				scene.setSelectionStateOfBox( indexOfSelectedBox, false );
-			indexOfSelectedBox = indexOfHilitedBox;
-			selectedPoint.copy( hilitedPoint );
-			normalAtSelectedPoint.copy( normalAtHilitedPoint );
-			if ( indexOfSelectedBox >= 0 ) {
-				scene.setSelectionStateOfBox( indexOfSelectedBox, true );
-			}
-			repaint();
+			selectNewBox();
 		}
 	}
 
