@@ -1,5 +1,6 @@
 
 import java.lang.Math;
+import java.util.ArrayList;
 import java.util.Vector;
 
 import java.awt.Container;
@@ -15,6 +16,8 @@ import java.awt.BorderLayout;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JSeparator;
+import javax.swing.SwingConstants;
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -354,6 +357,8 @@ class SceneViewer extends GLCanvas implements MouseListener, MouseMotionListener
 
 	Camera3D camera = new Camera3D();
 
+	ArrayList<Camera3DMemento> savedCameraList = new ArrayList<Camera3DMemento>();
+	
 	RadialMenuWidget radialMenu = new RadialMenuWidget();
 	private static final int COMMAND_CREATE_BOX = 0;
 	private static final int COMMAND_COLOR_RED = 1;
@@ -497,6 +502,17 @@ class SceneViewer extends GLCanvas implements MouseListener, MouseMotionListener
 			scene.getBoundingBoxOfScene().getDiagonal().length() * 0.5f
 		) );
 		camera.reset();
+	}
+	
+	public void saveCamera() {
+		Camera3DMemento newSavedCamera = new Camera3DMemento(camera.position, camera.target, camera.up);
+		savedCameraList.add(0, newSavedCamera);
+		if (savedCameraList.size() > 0) {
+			
+		}
+		if (savedCameraList.size() > 3) {
+			savedCameraList.remove(3);
+		}
 	}
 
 	public void init( GLAutoDrawable drawable ) {
@@ -776,6 +792,11 @@ public class SimpleModeller implements ActionListener {
 	JCheckBox displayCameraTargetCheckBox;
 	JCheckBox displayBoundingBoxCheckBox;
 	JCheckBox enableCompositingCheckBox;
+	JSeparator savedCameraSeparator;
+	JButton savedCameraButton1;
+	JButton savedCameraButton2;
+	JButton savedCameraButton3;
+	JButton saveCameraButton;
 
 	public void actionPerformed(ActionEvent e) {
 		Object source = e.getSource();
@@ -847,9 +868,29 @@ public class SimpleModeller implements ActionListener {
 		else if ( source == enableCompositingCheckBox ) {
 			sceneViewer.enableCompositing = ! sceneViewer.enableCompositing;
 			sceneViewer.repaint();
+		} else if ( source == saveCameraButton ) {
+			sceneViewer.saveCamera();
+		} else if ( source == savedCameraButton1 ) {
+			if (sceneViewer.savedCameraList.size() > 0) {
+				setCamera(sceneViewer.savedCameraList.get(0));
+			}
+		} else if ( source == savedCameraButton2 ) {
+			if (sceneViewer.savedCameraList.size() > 1) {
+				setCamera(sceneViewer.savedCameraList.get(1));
+			}
+		} else if ( source == savedCameraButton3 ) {
+			if (sceneViewer.savedCameraList.size() > 2) {
+				setCamera(sceneViewer.savedCameraList.get(2));
+			}
 		}
 	}
-
+	
+	public void setCamera(Camera3DMemento memento) {
+		sceneViewer.camera.setPosition(memento.getPosition());
+		sceneViewer.camera.setTarget(memento.getTarget());
+		sceneViewer.camera.setUp(memento.getUp());
+		sceneViewer.repaint();
+	}
 
 	// For thread safety, this should be invoked
 	// from the event-dispatching thread.
@@ -948,7 +989,37 @@ public class SimpleModeller implements ActionListener {
 		enableCompositingCheckBox.setAlignmentX( Component.LEFT_ALIGNMENT );
 		enableCompositingCheckBox.addActionListener(this);
 		toolPanel.add( enableCompositingCheckBox );
-
+		
+		savedCameraSeparator = new JSeparator(SwingConstants.HORIZONTAL);
+		savedCameraSeparator.setAlignmentY(Component.TOP_ALIGNMENT);
+		toolPanel.add( savedCameraSeparator );
+		
+		savedCameraButton1 = new JButton("Saved Camera 1");
+		savedCameraButton1.setAlignmentX(Component.LEFT_ALIGNMENT);
+		savedCameraButton1.setAlignmentY(Component.TOP_ALIGNMENT);
+		savedCameraButton1.addActionListener(this);
+//		savedCameraButton1.setEnabled(false);
+		toolPanel.add( "Saved Camera 1", savedCameraButton1 );
+		
+		savedCameraButton2 = new JButton("Saved Camera 2");
+		savedCameraButton2.setAlignmentX(Component.LEFT_ALIGNMENT);
+		savedCameraButton2.setAlignmentY(Component.TOP_ALIGNMENT);
+		savedCameraButton2.addActionListener(this);
+//		savedCameraButton2.setEnabled(false);
+		toolPanel.add( "Saved Camera 2", savedCameraButton2 );
+		
+		savedCameraButton3 = new JButton("Saved Camera 3");
+		savedCameraButton3.setAlignmentX(Component.LEFT_ALIGNMENT);
+		savedCameraButton3.setAlignmentY(Component.TOP_ALIGNMENT);
+		savedCameraButton3.addActionListener(this);
+//		savedCameraButton3.setEnabled(false);
+		toolPanel.add( "Saved Camera 3", savedCameraButton3 );
+		
+		saveCameraButton = new JButton("Save camera position");
+		saveCameraButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+		saveCameraButton.addActionListener(this);
+		toolPanel.add("Save Camera", saveCameraButton);
+		
 		frame.pack();
 		frame.setVisible( true );
 	}
