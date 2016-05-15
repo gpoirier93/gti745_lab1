@@ -1,6 +1,7 @@
 
 import java.lang.Math;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 
 import java.awt.Container;
@@ -15,7 +16,10 @@ import java.awt.event.ActionEvent;
 import java.awt.BorderLayout;
 
 import javax.swing.JFrame;
+import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.ListSelectionModel;
 import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
 import javax.swing.JMenuBar;
@@ -25,8 +29,10 @@ import javax.swing.JCheckBox;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.BoxLayout;
-
+import javax.swing.DefaultListModel;
 import javax.media.opengl.GL;
 import javax.media.opengl.GLCanvas;
 import javax.media.opengl.GLCapabilities;
@@ -61,6 +67,10 @@ class ColoredBox {
 		b = blue;
 		a = alpha;
 	}
+	
+	public String toString() {
+		return box.toString();
+	}
 
 }
 
@@ -71,11 +81,7 @@ class Scene {
 	AlignedBox3D boundingBoxOfScene = new AlignedBox3D();
 	boolean isBoundingBoxOfSceneDirty = false;
 
-
-
-
-	public Scene() {
-	}
+	public Scene() {}
 
 	public AlignedBox3D getBoundingBoxOfScene() {
 		if ( isBoundingBoxOfSceneDirty ) {
@@ -354,6 +360,7 @@ class SceneViewer extends GLCanvas implements MouseListener, MouseMotionListener
 	public int indexOfHilitedBox = -1; // -1 for none
 	private Point3D hilitedPoint = new Point3D();
 	private Vector3D normalAtHilitedPoint = new Vector3D();
+	private List<SelectedBoxListener> listeners = new ArrayList<SelectedBoxListener>();
 
 	Camera3D camera = new Camera3D();
 
@@ -379,7 +386,7 @@ class SceneViewer extends GLCanvas implements MouseListener, MouseMotionListener
 
 		super( caps );
 		addGLEventListener(this);
-
+		
 		addMouseListener( this );
 		addMouseMotionListener( this );
 
@@ -398,6 +405,11 @@ class SceneViewer extends GLCanvas implements MouseListener, MouseMotionListener
 		camera.reset();
 
 	}
+	
+	public void addListener(SelectedBoxListener toAdd) {
+        listeners.add(toAdd);
+    }
+	
 	public Dimension getPreferredSize() {
 		return new Dimension( 512, 512 );
 	}
@@ -460,12 +472,19 @@ class SceneViewer extends GLCanvas implements MouseListener, MouseMotionListener
 		if ( indexOfSelectedBox >= 0 )
 			// de-select the old box
 			scene.setSelectionStateOfBox( indexOfSelectedBox, false );
+		
 		indexOfSelectedBox = indexOfHilitedBox;
 		selectedPoint.copy( hilitedPoint );
 		normalAtSelectedPoint.copy( normalAtHilitedPoint );
+		
 		if ( indexOfSelectedBox >= 0 ) {
 			scene.setSelectionStateOfBox( indexOfSelectedBox, true );
 		}
+		
+		for (SelectedBoxListener listener : listeners) {
+			listener.valueChanged(indexOfSelectedBox);
+		}
+		
 		repaint();
 	}
 
@@ -774,13 +793,14 @@ class SceneViewer extends GLCanvas implements MouseListener, MouseMotionListener
 	}
 }
 
-public class SimpleModeller implements ActionListener {
+public class SimpleModeller implements ActionListener, ListSelectionListener {
 
 	static final String applicationName = "Simple Modeller";
 
 	JFrame frame;
 	Container toolPanel;
 	SceneViewer sceneViewer;
+	ListWidget listWidget;
 
 	JMenuItem deleteAllMenuItem, quitMenuItem, aboutMenuItem;
 	JButton createBoxButton;
@@ -810,6 +830,7 @@ public class SimpleModeller implements ActionListener {
 
 			if (response == JOptionPane.YES_OPTION) {
 				sceneViewer.deleteAll();
+				listWidget.removeAll();
 				sceneViewer.repaint();
 			}
 		}
@@ -836,9 +857,11 @@ public class SimpleModeller implements ActionListener {
 		}
 		else if ( source == createBoxButton ) {
 			sceneViewer.createNewBox();
+			listWidget.addBox(sceneViewer.scene.coloredBoxes.lastElement());
 			sceneViewer.repaint();
 		}
 		else if ( source == deleteSelectionButton ) {
+			listWidget.removeBox(sceneViewer.indexOfSelectedBox);
 			sceneViewer.deleteSelection();
 			sceneViewer.repaint();
 		}
@@ -883,6 +906,25 @@ public class SimpleModeller implements ActionListener {
 				setCamera(sceneViewer.savedCameraList.get(2));
 			}
 		}
+	}
+	
+	@Override
+	public void valueChanged(ListSelectionEvent e) {
+		if (e.getValueIsAdjusting() == false) {
+			int index = listWidget.getList().getSelectedIndex();
+			
+			if ( sceneViewer.indexOfSelectedBox >= 0 )
+				// de-select the old box
+				sceneViewer.scene.setSelectionStateOfBox( sceneViewer.indexOfSelectedBox, false );
+			
+			sceneViewer.indexOfSelectedBox = index;
+			
+			if ( index >= 0 ) {
+				sceneViewer.scene.setSelectionStateOfBox( index, true );
+			}
+
+	        sceneViewer.repaint();
+	    }
 	}
 	
 	public void setCamera(Camera3DMemento memento) {
@@ -990,6 +1032,11 @@ public class SimpleModeller implements ActionListener {
 		enableCompositingCheckBox.addActionListener(this);
 		toolPanel.add( enableCompositingCheckBox );
 		
+		listWidget = new ListWidget();
+		listWidget.getList().addListSelectionListener(this);
+		sceneViewer.addListener(listWidget);
+		toolPanel.add(listWidget.getListScroller());
+
 		savedCameraSeparator = new JSeparator(SwingConstants.HORIZONTAL);
 		savedCameraSeparator.setAlignmentY(Component.TOP_ALIGNMENT);
 		toolPanel.add( savedCameraSeparator );
