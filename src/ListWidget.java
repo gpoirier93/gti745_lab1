@@ -7,7 +7,7 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-public class ListWidget {
+public class ListWidget implements SelectedBoxListener {
 	private JScrollPane listScroller;
 	private JList list;
 	private DefaultListModel<ColoredBox> listModel;
@@ -33,8 +33,11 @@ public class ListWidget {
 		listModel.addElement(box);
 	}
 	
-	public void setHighlitedBox(int index) {
-		list.setSelectedIndex(index);
+	@Override
+	public void valueChanged(int index) {
+		if (index >= 0) {
+			list.setSelectedIndex(index);
+		}
 	}
 	
 	public void removeBox(int index) {

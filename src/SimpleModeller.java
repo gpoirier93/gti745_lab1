@@ -1,5 +1,7 @@
 
 import java.lang.Math;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 
 import java.awt.Container;
@@ -356,6 +358,7 @@ class SceneViewer extends GLCanvas implements MouseListener, MouseMotionListener
 	public int indexOfHilitedBox = -1; // -1 for none
 	private Point3D hilitedPoint = new Point3D();
 	private Vector3D normalAtHilitedPoint = new Vector3D();
+	private List<SelectedBoxListener> listeners = new ArrayList<SelectedBoxListener>();
 
 	Camera3D camera = new Camera3D();
 
@@ -398,6 +401,11 @@ class SceneViewer extends GLCanvas implements MouseListener, MouseMotionListener
 		camera.reset();
 
 	}
+	
+	public void addListener(SelectedBoxListener toAdd) {
+        listeners.add(toAdd);
+    }
+	
 	public Dimension getPreferredSize() {
 		return new Dimension( 512, 512 );
 	}
@@ -468,6 +476,11 @@ class SceneViewer extends GLCanvas implements MouseListener, MouseMotionListener
 		if ( indexOfSelectedBox >= 0 ) {
 			scene.setSelectionStateOfBox( indexOfSelectedBox, true );
 		}
+		
+		for (SelectedBoxListener listener : listeners) {
+			listener.valueChanged(indexOfSelectedBox);
+		}
+		
 		repaint();
 	}
 
@@ -980,6 +993,7 @@ public class SimpleModeller implements ActionListener, ListSelectionListener {
 		
 		listWidget = new ListWidget();
 		listWidget.getList().addListSelectionListener(this);
+		sceneViewer.addListener(listWidget);
 		toolPanel.add(listWidget.getListScroller());
 
 		frame.pack();
