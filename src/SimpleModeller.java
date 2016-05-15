@@ -765,7 +765,7 @@ class SceneViewer extends GLCanvas implements MouseListener, MouseMotionListener
 	}
 }
 
-public class SimpleModeller implements ActionListener {
+public class SimpleModeller implements ActionListener, ListSelectionListener {
 
 	static final String applicationName = "Simple Modeller";
 
@@ -859,6 +859,25 @@ public class SimpleModeller implements ActionListener {
 			sceneViewer.enableCompositing = ! sceneViewer.enableCompositing;
 			sceneViewer.repaint();
 		}
+	}
+	
+	@Override
+	public void valueChanged(ListSelectionEvent e) {
+		if (e.getValueIsAdjusting() == false) {
+			int index = listWidget.getList().getSelectedIndex();
+			
+			if ( sceneViewer.indexOfSelectedBox >= 0 )
+				// de-select the old box
+				sceneViewer.scene.setSelectionStateOfBox( sceneViewer.indexOfSelectedBox, false );
+			
+			sceneViewer.indexOfSelectedBox = index;
+			
+			if ( index >= 0 ) {
+				sceneViewer.scene.setSelectionStateOfBox( index, true );
+			}
+
+	        sceneViewer.repaint();
+	    }
 	}
 
 	// For thread safety, this should be invoked
@@ -960,6 +979,7 @@ public class SimpleModeller implements ActionListener {
 		toolPanel.add( enableCompositingCheckBox );
 		
 		listWidget = new ListWidget();
+		listWidget.getList().addListSelectionListener(this);
 		toolPanel.add(listWidget.getListScroller());
 
 		frame.pack();

@@ -55,4 +55,8 @@ public class ListWidget {
 		return listScroller;
 	}
 	
+	public JList getList() {
+		return list;
+	}
+	
 }
