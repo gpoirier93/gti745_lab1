@@ -14,7 +14,10 @@ import java.awt.event.ActionEvent;
 import java.awt.BorderLayout;
 
 import javax.swing.JFrame;
+import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.ListSelectionModel;
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -22,8 +25,10 @@ import javax.swing.JCheckBox;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.BoxLayout;
-
+import javax.swing.DefaultListModel;
 import javax.media.opengl.GL;
 import javax.media.opengl.GLCanvas;
 import javax.media.opengl.GLCapabilities;
@@ -58,6 +63,10 @@ class ColoredBox {
 		b = blue;
 		a = alpha;
 	}
+	
+	public String toString() {
+		return box.toString();
+	}
 
 }
 
@@ -68,11 +77,7 @@ class Scene {
 	AlignedBox3D boundingBoxOfScene = new AlignedBox3D();
 	boolean isBoundingBoxOfSceneDirty = false;
 
-
-
-
-	public Scene() {
-	}
+	public Scene() {}
 
 	public AlignedBox3D getBoundingBoxOfScene() {
 		if ( isBoundingBoxOfSceneDirty ) {
@@ -374,7 +379,7 @@ class SceneViewer extends GLCanvas implements MouseListener, MouseMotionListener
 
 		super( caps );
 		addGLEventListener(this);
-
+		
 		addMouseListener( this );
 		addMouseMotionListener( this );
 
@@ -455,9 +460,11 @@ class SceneViewer extends GLCanvas implements MouseListener, MouseMotionListener
 		if ( indexOfSelectedBox >= 0 )
 			// de-select the old box
 			scene.setSelectionStateOfBox( indexOfSelectedBox, false );
+		
 		indexOfSelectedBox = indexOfHilitedBox;
 		selectedPoint.copy( hilitedPoint );
 		normalAtSelectedPoint.copy( normalAtHilitedPoint );
+		
 		if ( indexOfSelectedBox >= 0 ) {
 			scene.setSelectionStateOfBox( indexOfSelectedBox, true );
 		}
@@ -765,6 +772,7 @@ public class SimpleModeller implements ActionListener {
 	JFrame frame;
 	Container toolPanel;
 	SceneViewer sceneViewer;
+	ListWidget listWidget;
 
 	JMenuItem deleteAllMenuItem, quitMenuItem, aboutMenuItem;
 	JButton createBoxButton;
@@ -789,6 +797,7 @@ public class SimpleModeller implements ActionListener {
 
 			if (response == JOptionPane.YES_OPTION) {
 				sceneViewer.deleteAll();
+				listWidget.removeAll();
 				sceneViewer.repaint();
 			}
 		}
@@ -815,9 +824,11 @@ public class SimpleModeller implements ActionListener {
 		}
 		else if ( source == createBoxButton ) {
 			sceneViewer.createNewBox();
+			listWidget.addBox(sceneViewer.scene.coloredBoxes.lastElement());
 			sceneViewer.repaint();
 		}
 		else if ( source == deleteSelectionButton ) {
+			listWidget.removeBox(sceneViewer.indexOfSelectedBox);
 			sceneViewer.deleteSelection();
 			sceneViewer.repaint();
 		}
@@ -849,7 +860,6 @@ public class SimpleModeller implements ActionListener {
 			sceneViewer.repaint();
 		}
 	}
-
 
 	// For thread safety, this should be invoked
 	// from the event-dispatching thread.
@@ -948,6 +958,9 @@ public class SimpleModeller implements ActionListener {
 		enableCompositingCheckBox.setAlignmentX( Component.LEFT_ALIGNMENT );
 		enableCompositingCheckBox.addActionListener(this);
 		toolPanel.add( enableCompositingCheckBox );
+		
+		listWidget = new ListWidget();
+		toolPanel.add(listWidget.getListScroller());
 
 		frame.pack();
 		frame.setVisible( true );
