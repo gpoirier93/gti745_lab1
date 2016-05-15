@@ -292,6 +292,29 @@ public class Camera3D {
 		return z;
 	}
 
+	public Point3D getPosition() {
+		return position;
+	}
+
+	public void setPosition(Point3D position) {
+		this.position = position;
+	}
+
+	public Point3D getTarget() {
+		return target;
+	}
+
+	public void setTarget(Point3D target) {
+		this.target = target;
+	}
+
+	public Vector3D getUp() {
+		return up;
+	}
+
+	public void setUp(Vector3D up) {
+		this.up = up;
+	}
 }
 
 
